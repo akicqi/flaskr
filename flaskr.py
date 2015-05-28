@@ -3,12 +3,14 @@
 
 __author__ = 'akic'
 
-"""
-config
-"""
 import os
 import sqlite3
 from flask import Flask,request,session,g,redirect,url_for,abort,render_template,flash
+
+#解决字符编码问题
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 #创建app
 app = Flask(__name__)
@@ -20,11 +22,17 @@ app.config.update(dict(
     DEBUG = True,
     SECRET_KEY = 'akfkjkhggjuuwnbg',
     USERNAME = 'admin',
-    PASSWORD = 'admin'    
+    PASSWORD = 'admin'
 ))
 
 #加载环境配置文件,且设置为静默模式
+#app.config.from_object(__name__)
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)
+
+#定义全局变量g.db
+@app.before_request  
+def before_request():
+    g.db = connect_db()
 
 #连接数据库
 def connect_db():
@@ -65,11 +73,12 @@ def add_entry():
     g.db.commit()
     #消息闪现
     flash('新条目已成功插入数据库!')
-    return redirect(url_for('showentries'))
+    return redirect(url_for('show_entries'))
 
 #登陆
 @app.route('/login',methods = ['GET','POST'])
 def login():
+    error = None
     if request.method == 'POST':
         #账号密码合法性检验
         if request.form['username'] != app.config['USERNAME']:
@@ -79,18 +88,17 @@ def login():
         else:
             #通过校验,将session中logged_in置为True
             session['logged_in'] = True
-            flash('登陆成功!^^')
-            return redirect(url_for('showentries'))
-    return render_template('login.html',error = error)
+            flash('登陆成功!')
+            return redirect(url_for('show_entries'))
+    return render_template('login.html',error=error)
 
 #注销
 @app.route('/logout')
 def logout():
     session.pop('logged_in',None)
     flash('注销成功!')
-    return redirect(url_for('showentries'))
-
+    return redirect(url_for('show_entries'))
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
