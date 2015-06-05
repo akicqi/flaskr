@@ -1,44 +1,26 @@
 #!/usr/bin/env python
 #-*-coding:utf-8-*-
 
-__author__ = 'akic'
-
-import os
 import sqlite3
 from flask import Flask,request,session,g,redirect,url_for,abort,render_template,flash
 
-#解决字符编码问题
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 #创建app
 app = Flask(__name__)
+app.config.from_object('config')
 
-
-#导入默认配置
-app.config.update(dict(
-    DATABASE = os.path.join(app.root_path,'flaskr.db'),
-    DEBUG = True,
-    SECRET_KEY = 'akfkjkhggjuuwnbg',
-    USERNAME = 'admin',
-    PASSWORD = 'admin'
-))
-
-#加载环境配置文件,且设置为静默模式
-#app.config.from_object(__name__)
-app.config.from_envvar('FLASKR_SETTINGS', silent=True)
-
-#定义全局变量g.db
-@app.before_request  
-def before_request():
-    g.db = connect_db()
 
 #连接数据库
 def connect_db():
     row = sqlite3.connect(app.config['DATABASE'])
     row.row_factory = sqlite3.Row
     return row
+
+
+#定义全局变量g.db
+@app.before_request  
+def before_request():
+    g.db = connect_db()
+
 
 #初始化数据库
 def init_db():
@@ -52,6 +34,7 @@ def init_db():
             db.cursor().executescript(f.read())
         #提交事务
         db.commit()
+
 
 #显示数据
 @app.route('/')
@@ -99,6 +82,3 @@ def logout():
     flash('注销成功!')
     return redirect(url_for('show_entries'))
 
-
-if __name__ == '__main__':
-    app.run()
